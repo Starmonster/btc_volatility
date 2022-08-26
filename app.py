@@ -7,7 +7,7 @@ from datetime import timedelta
 from plotly.subplots import make_subplots
 import talib
 import requests
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from volatility_funcs import *
 import pandas as pd
 import plotly.graph_objects as go
