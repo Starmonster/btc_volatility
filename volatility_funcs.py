@@ -6,7 +6,9 @@ import datetime
 from datetime import timedelta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 import talib
+import pandas_ta as ta
 import requests
 import warnings
 warnings.filterwarnings("ignore")
@@ -88,7 +90,7 @@ def volatility_backtest(df, vol=0.2, timeperiod=100):
 
     # Get the dataframe of all volatility values less than the user input
     vol_df = df[df.volatility < vol]
-    print(f"VOL DF COLS: {vol_df.columns, vol_df.shape}")
+    # print(f"VOL DF COLS: {vol_df.columns, vol_df.shape}")
 
 
     # vol_df["month"] = vol_df.index.month
@@ -105,9 +107,9 @@ def volatility_backtest(df, vol=0.2, timeperiod=100):
 
         unq.append((year, month))
     vol_df["unique"] = unq
-    print(f"UNIQUE: {unq}")
+    # print(f"UNIQUE: {unq}")
     list_of_dates = vol_df.unique.unique()
-    print(f"LIST {list_of_dates[:6], len(list_of_dates)}")
+    # print(f"LIST {list_of_dates[:6], len(list_of_dates)}")
 
     for i, vol_date in enumerate(list_of_dates):
         high = 0
@@ -213,10 +215,21 @@ def build_indicator(df, indicator):
         df["ema200"] = talib.EMA(df["close"], timeperiod=200)
 
     elif indicator=="STOCHRSI":
-        df["fastk"], df["fastd"] = talib.STOCHRSI(df["close"], timeperiod=14, fastk_period=3,
-                                                  fastd_period=3, fastd_matype=0)
+        stoch_rsi = ta.stochrsi(df["close"], length=14, rsi_length=14, k=3, d=3)
+        stoch_rsi.rename(columns={"STOCHRSIk_14_14_3_3": "k", "STOCHRSId_14_14_3_3": "d"}, inplace=True)
 
-    # elif indicator=="MACD":
+        # stoch_rsi.reset_index(inplace=True)
+        df = df.join(stoch_rsi)
+        # df.reset_index(inplace=True)
+
+    elif indicator=="MACD":
+        macd = ta.macd(df["close"], fast=12, slow=26, signal=9)
+        macd.rename(columns={"MACD_12_26_9": "macd", "MACDh_12_26_9": "histogram", "MACDs_12_26_9": "slow"}, inplace=True)
+        # macd.reset_index(inplace=True)
+
+        df = df.join(macd)
+
+
 
     return df
 
@@ -229,9 +242,9 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
     fig = make_subplots(rows=2, cols=1)
     fig.update_layout(
         width=1250,
-        height=1250,
-        yaxis_domain=[0.5, 0.99],
-        yaxis2_domain=[0.0, 0.47],  # Changes the aspect ratio of the second plot
+        height=800,
+        yaxis_domain=[0.4, 0.99],
+        yaxis2_domain=[0.0, 0.35],  # Changes the aspect ratio of the second plot
 
     )
 
@@ -309,7 +322,9 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
     fig.add_trace(fig1["data"][8], row=1, col=1)
 
     # PLOT THE SECONDARY INDICATOR
-    fig2 = go.Figure()
+    # fig2 = go.Figure()
+
+    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
     if indicator=="SMA":
         fig2.add_trace(
             go.Line(x=df.time, y=df.sma200, name="SMA_200")
@@ -323,6 +338,8 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
             go.Line(x=df.time, y=df.sma50, name="SMA_50")
 
         )
+
+
 
         # Add sell signals
         fig2.add_trace(
@@ -342,44 +359,17 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
                            size=10
                        ), showlegend=False))
 
+
         fig.add_trace(fig2["data"][0], row=2, col=1)
         fig.add_trace(fig2["data"][1], row=2, col=1)
         fig.add_trace(fig2["data"][2], row=2, col=1)
         fig.add_trace(fig2["data"][3], row=2, col=1)
         fig.add_trace(fig2["data"][4], row=2, col=1)
 
-    elif indicator=="STOCHRSI":
-        fig2.add_trace(
-            go.Line(x=df.time, y=df.fastk, name="STOCH_RSI_K")
 
-        )
-        fig2.add_trace(
-            go.Line(x=df.time, y=df.fastd, name="STOCH_RSI_D")
+        fig.update_yaxes(type="log")
 
-        )
 
-        # Add sell signals
-        fig2.add_trace(
-            go.Scatter(mode="markers", x=sells_df.thresh_date, y=sells_df.price, name="Sell Signal",
-                       marker=dict(
-                           symbol="arrow-down",
-                           color="red",
-                           size=10
-                       ), showlegend=False))
-
-        # Add buy signals
-        fig2.add_trace(
-            go.Scatter(mode="markers", x=buys_df.thresh_date, y=buys_df.price, name="Buy Signal",
-                       marker=dict(
-                           symbol="arrow-up",
-                           color="MidnightBlue",
-                           size=10
-                       ), showlegend=False))
-
-        fig.add_trace(fig2["data"][0], row=2, col=1)
-        fig.add_trace(fig2["data"][1], row=2, col=1)
-        fig.add_trace(fig2["data"][2], row=2, col=1)
-        fig.add_trace(fig2["data"][3], row=2, col=1)
 
     elif indicator=="EMA":
 
@@ -420,6 +410,87 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
         fig.add_trace(fig2["data"][3], row=2, col=1)
         fig.add_trace(fig2["data"][4], row=2, col=1)
 
+        fig.update_yaxes(type="log")
+
+    elif indicator=="STOCHRSI":
+
+        fig2.add_trace(
+            go.Line(x=df.time, y=df.k, name="STOCHRSI_K")
+
+        )
+        fig2.add_trace(
+            go.Line(x=df.time, y=df.d, name="STOCHRSI_D")
+
+        )
+        # Add sell signals
+        sells_data = list(100 for i in range(0, sells_df.shape[0]))
+        buys_data = list(0 for i in range(0, buys_df.shape[0]))
+        fig2.add_trace(
+            go.Scatter(mode="markers", x=sells_df.thresh_date, y=sells_data, name="Sell Signal",
+                       marker=dict(
+                           symbol="arrow-down",
+                           color="red",
+                           size=10
+                       ), showlegend=False))
+
+        # Add buy signals
+        fig2.add_trace(
+            go.Scatter(mode="markers", x=buys_df.thresh_date, y=buys_data, name="Buy Signal",
+                       marker=dict(
+                           symbol="arrow-up",
+                           color="MidnightBlue",
+                           size=10
+                       ), showlegend=False))
+
+        fig.add_trace(fig2["data"][0], row=2, col=1)
+        fig.add_trace(fig2["data"][1], row=2, col=1)
+        fig.add_trace(fig2["data"][2], row=2, col=1)
+        fig.add_trace(fig2["data"][3], row=2, col=1)
+        fig.update_yaxes(type="log", row=1, col=1)
+
+    elif indicator=="MACD":
+
+        fig2.add_trace(
+            go.Line(x=df.time, y=df.macd, name="MACD")
+
+        )
+        fig2.add_trace(
+            go.Bar(x=df.time, y=df.histogram, name="Histogram")
+
+        )
+        fig2.add_trace(
+            go.Line(x=df.time, y=df.slow, name="MACD Oscillator")
+
+        )
+
+        # Add sell signals
+        sells_data = list(0 for i in range(0, sells_df.shape[0]))
+        buys_data = list(0 for i in range(0, buys_df.shape[0]))
+
+        fig2.add_trace(
+            go.Scatter(mode="markers", x=sells_df.thresh_date, y=sells_data, name="Sell Signal",
+                       marker=dict(
+                           symbol="arrow-down",
+                           color="red",
+                           size=10
+                       ), showlegend=False))
+
+        # Add buy signals
+        fig2.add_trace(
+            go.Scatter(mode="markers", x=buys_df.thresh_date, y=buys_data, name="Buy Signal",
+                       marker=dict(
+                           symbol="arrow-up",
+                           color="MidnightBlue",
+                           size=10
+                       ), showlegend=False))
+
+        fig.add_trace(fig2["data"][0], row=2, col=1)
+        fig.add_trace(fig2["data"][1], row=2, col=1)
+        fig.add_trace(fig2["data"][2], row=2, col=1)
+        fig.add_trace(fig2["data"][3], row=2, col=1)
+        fig.add_trace(fig2["data"][4], row=2, col=1)
+        fig.update_yaxes(type="log", row=1, col=1)
+
 
 
 
@@ -433,26 +504,16 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
 
     )
 
+
+
     # Set the y axis to log type so we can more easily see the historic values
+    # fig.update_yaxes(type="log")
     # fig.update_yaxes(type="log", row=1, col=1)
-    fig.update_yaxes(type="log")
     fig.update_xaxes(showgrid=False)
+    # fig.update_yaxes(autorange=True, row=2, col=1)
     # Add traces to figure
-    # fig.add_trace(fig1["data"][0], row=1, col=1)
-    # fig.add_trace(fig1["data"][1], row=1, col=1)
-    # fig.add_trace(fig1["data"][2], row=1, col=1)
-    # fig.add_trace(fig1["data"][3], row=1, col=1)
-    # fig.add_trace(fig1["data"][4], row=1, col=1)
-    # fig.add_trace(fig1["data"][5], row=1, col=1)
-    # fig.add_trace(fig1["data"][6], row=1, col=1)
-    # fig.add_trace(fig1["data"][7], row=1, col=1)
-    # fig.add_trace(fig1["data"][8], row=1, col=1)
-    # fig.add_trace(fig1["data"][9], row=1, col=1)
-    # fig.add_trace(fig2["data"][0], row=2, col=1)
-    # fig.add_trace(fig2["data"][1], row=2, col=1)
-    # fig.add_trace(fig2["data"][2], row=2, col=1)
-    # fig.add_trace(fig2["data"][3], row=2, col=1)
-    # fig.add_trace(fig2["data"][4], row=2, col=1)
+
     # fig.show()
 
     return fig
+

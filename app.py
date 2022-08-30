@@ -45,12 +45,14 @@ df = df[["time", "open", "high", "low", "close",
 c = np.where(df['lower'] < 0 , 0.03, df["lower"])
 df["lower"] = c
 
+print(f"before process: {df.index}")
+
 
 
 def main(df):
 
     st.title("VOLATILITY TEST")
-    print(df.volatility.mean())
+    # print(df.volatility.mean())
 
     # Set the user Input
     vol_select = st.sidebar.number_input(label="Enter a volatility threshold between 0.03-0.2", min_value=0.029, max_value=0.199, step=0.001)
@@ -59,16 +61,20 @@ def main(df):
     indicator_select = st.sidebar.radio(label="Select a confirmation indicator", options=["SMA", "EMA", "STOCHRSI", "MACD"])
 
 
-    print(f"DF: {df.shape}")
+    # print(f"DF: {df.shape}")
 
     # Get the plotting data for volatility and timeperiod as specified by user
     plot_vol = volatility_backtest(df=df, vol=vol_select, timeperiod=period_select)
+
+    df.reset_index(inplace=True)
 
     df = build_indicator(df=df, indicator=indicator_select)
 
     fig = plot_data(df=df, plot_vol=plot_vol, vol=vol_select, timeperiod=period_select, indicator=indicator_select)
 
+
     st.plotly_chart(fig)
+
 
 
 
