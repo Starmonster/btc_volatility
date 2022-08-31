@@ -6,7 +6,7 @@ import datetime
 from datetime import timedelta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import plotly.express as px
+# import plotly.express as px
 import talib
 import pandas_ta as ta
 import requests
@@ -64,6 +64,7 @@ def get_latest_data(btc):
 
     # Buil latest bbs
     bollies = talib.BBANDS(btc_latest["close"], timeperiod=20, nbdevup=2, nbdevdn=2)
+
 
     bollies = pd.DataFrame(bollies).T.rename(columns={0: "upper", 1: "basis", 2: "lower"})
 
