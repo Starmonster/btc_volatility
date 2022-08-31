@@ -246,8 +246,8 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
     fig.update_layout(
         width=1250,
         height=800,
-        yaxis_domain=[0.4, 0.99],
-        yaxis2_domain=[0.0, 0.35],  # Changes the aspect ratio of the second plot
+        yaxis_domain=[0.35, 0.99],
+        yaxis2_domain=[0.0, 0.3],  # Changes the aspect ratio of the second plot
 
     )
 
@@ -266,12 +266,12 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
 
     # BTC LOWER BB
     fig1.add_trace(
-        go.Line(x=df.time, y=df.lower, line_width=1, name="Lower Bound", text=df["text"], hoverinfo='text')
+        go.Line(x=df.time, y=df.lower, line_width=1, name="Lower BB Bound", text=df["text"], hoverinfo='text')
     )
 
     # BTC UPPER BB
     fig1.add_trace(
-        go.Line(x=df.time, y=df.upper, line_width=1, name="Upper Bound", text=df["text"], hoverinfo='text')
+        go.Line(x=df.time, y=df.upper, line_width=1, name="Upper BB Bound", text=df["text"], hoverinfo='text')
     )
 
     # Add volatility trace to the main chart
@@ -503,7 +503,9 @@ def plot_data(df, plot_vol, vol, timeperiod, indicator):
         xaxis2_title="TIME",
         yaxis_title="BTCUSD 1D CLOSE",
         yaxis2_title=f"{indicator}",
-        title=f"BITCOIN VOLATILITY - Signals volatility < {vol} over {timeperiod} days",
+        title=f"Volatility Back Test: volatility < {round(vol,3)} over {timeperiod} days",
+        # title= f"Requested Metrics: volatility < {round(vol,3)} over {timeperiod} days",
+        title_font_color="#003865"
 
     )
 

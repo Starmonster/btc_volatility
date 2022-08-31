@@ -51,14 +51,17 @@ print(f"before process: {df.index}")
 
 def main(df):
 
-    st.title("VOLATILITY TEST")
+    st.title("BITCOIN VOLATILITY BACKTEST")
+    st.text("Back-test price movement subsequent to break of a user-defined volatility threshold")
+    st.text("")
+    st.sidebar.title("Backtest Parameters")
     # print(df.volatility.mean())
 
     # Set the user Input
     vol_select = st.sidebar.number_input(label="Enter a volatility threshold between 0.03-0.2", min_value=0.029, max_value=0.199, step=0.001)
     period_select = st.sidebar.number_input(label="Enter a returns period between 20 and 365 days", min_value=20, max_value=365)
 
-    indicator_select = st.sidebar.radio(label="Select a confirmation indicator", options=["SMA", "EMA", "STOCHRSI", "MACD"])
+    indicator_select = st.sidebar.radio(label="Select a confirmation indicator (beta)", options=["SMA", "EMA", "STOCHRSI", "MACD"])
 
 
     # print(f"DF: {df.shape}")
@@ -72,12 +75,13 @@ def main(df):
 
     fig = plot_data(df=df, plot_vol=plot_vol, vol=vol_select, timeperiod=period_select, indicator=indicator_select)
 
-
     st.plotly_chart(fig)
 
-
-
-
+    st.subheader("Indicator Parameters")
+    st.caption("Volatility = 1 - (lower bollinger band / upper bollinger band) - %age difference lower to upper")
+    st.caption("Bollinger Band Parameters: ma=20, std=2, ma-type=sma-close")
+    st.caption("MACD Parameters: fast-period=12, slow-period=26, signal=9")
+    st.caption("STOCHRSI Parameters: length=14, rsi_length=14, k=3, d=3")
 
 
 
