@@ -204,15 +204,17 @@ def build_indicator(df, indicator):
     # If indicator matches one of our expected then build that feature
     if indicator=="SMA":
 
-        df["sma200"] = talib.SMA(df["close"], timeperiod=200)
-        df["sma100"] = talib.SMA(df["close"], timeperiod=100)
-        df["sma50"] = talib.SMA(df["close"], timeperiod=50)
-        # df["sma20"] = talib.SMA(df["close"], timeperiod=20)
+        df["sma200"] = ta.sma(close=df["close"], length=200)
+        df["sma100"] = ta.sma(close=df["close"], length=100)
+        df["sma50"] = ta.sma(close=df["close"], length=50)
+
+
+
 
     elif indicator=="EMA":
-        df["ema21"] = talib.EMA(df["close"], timeperiod=21)
-        df["ema50"] = talib.EMA(df["close"], timeperiod=50)
-        df["ema200"] = talib.EMA(df["close"], timeperiod=200)
+        df["ema21"] = ta.ema(df["close"], length=21)
+        df["ema50"] = ta.ema(df["close"], length=50)
+        df["ema200"] = ta.ema(df["close"], length=200)
 
     elif indicator=="STOCHRSI":
         stoch_rsi = ta.stochrsi(df["close"], length=14, rsi_length=14, k=3, d=3)
